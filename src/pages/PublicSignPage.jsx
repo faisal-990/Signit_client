@@ -14,7 +14,7 @@ function PublicSignPage() {
   const [renderedPdfSize, setRenderedPdfSize] = useState({ width: 600, height: 800 })
 
   useEffect(() => {
-    fetch(`${import.meta.env.VITE_API_URL}/api/signature-request/${token}`)
+    fetch(`${import.meta.env.VITE_API_URL}/api/signature-request/${token}`, { credentials: 'include' })
       .then(res => res.json())
       .then(data => {
         if (data.error) setLoadError(data.error)
@@ -33,7 +33,7 @@ function PublicSignPage() {
 
   const handleSaveSignature = async () => {
     // Convert to PDF coordinates
-    const pdfBytes = await fetch(`${import.meta.env.VITE_API_URL}${request.document.url}`).then(res => res.arrayBuffer())
+    const pdfBytes = await fetch(`${import.meta.env.VITE_API_URL}${request.document.url}`, { credentials: 'include' }).then(res => res.arrayBuffer())
     const { width: renderedWidth, height: renderedHeight } = renderedPdfSize
     const pdfDoc = await window.pdfLib.PDFDocument.load(pdfBytes)
     const font = await pdfDoc.embedFont(window.pdfLib.StandardFonts.HelveticaBold)
@@ -59,6 +59,7 @@ function PublicSignPage() {
     await fetch(`${import.meta.env.VITE_API_URL}/api/signature-request/${token}/sign`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
       body: JSON.stringify({ signatureData: { signatures } }),
     })
     setSigned(true)

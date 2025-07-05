@@ -88,7 +88,7 @@ function DocumentViewPage() {
 
   const handleSaveSignatures = async () => {
     // Download signed PDF with signatures using pdf-lib
-    const pdfBytes = await fetch(`${import.meta.env.VITE_API_URL}${doc.url}`).then(res => res.arrayBuffer())
+    const pdfBytes = await fetch(`${import.meta.env.VITE_API_URL}${doc.url}`, { credentials: 'include' }).then(res => res.arrayBuffer())
     const pdfDoc = await PDFDocument.load(pdfBytes)
     const font = await pdfDoc.embedFont(StandardFonts.HelveticaBold)
     const pages = pdfDoc.getPages()
@@ -129,6 +129,7 @@ function DocumentViewPage() {
       const res = await fetch(`${import.meta.env.VITE_API_URL}/api/signature-request`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify({ documentId: doc._id, recipientEmail }),
       })
       if (!res.ok) throw new Error('Failed to send signature request')

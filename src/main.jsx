@@ -7,6 +7,9 @@ import App from './App.jsx'
 import PublicSignPage from './pages/PublicSignPage.jsx'
 import * as pdfLib from 'pdf-lib'
 
+// Debug: Log the API URL to see what's being used
+console.log('VITE_API_URL:', import.meta.env.VITE_API_URL);
+
 window.pdfLib = pdfLib
 
 createRoot(document.getElementById('root')).render(
