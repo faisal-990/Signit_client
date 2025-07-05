@@ -54,6 +54,8 @@ function DocumentViewPage() {
       .catch(() => setLoadError('Failed to fetch signatures.'))
   }, [id])
 
+  console.log('Document object:', doc);
+
   const handleAddSignature = page => {
     setPendingPage(page)
     setPendingName('')
