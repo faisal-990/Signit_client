@@ -1,8 +1,8 @@
 import React, { useState } from 'react'
 import { Document, Page, pdfjs } from 'react-pdf'
 
-// Use the worker at the root, copied by vite-plugin-static-copy
-pdfjs.GlobalWorkerOptions.workerSrc = '/pdf.worker.min.mjs';
+// For react-pdf v10, the worker is handled automatically
+// No need to manually set workerSrc
 
 function PDFViewer({ fileUrl, children, onLoadError }) {
   const [numPages, setNumPages] = useState(null)
