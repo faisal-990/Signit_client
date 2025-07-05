@@ -6,6 +6,7 @@ import PDFViewer from '../components/PDFViewer'
 import SignatureField from '../components/SignatureField'
 import { PDFDocument, rgb, StandardFonts } from 'pdf-lib'
 import { v4 as uuidv4 } from 'uuid'
+import { useAuth } from '../utils/AuthContext'
 
 const signatureFonts = [
   { label: 'Classic', fontFamily: 'cursive' },
@@ -31,20 +32,25 @@ function DocumentViewPage() {
   const [recipientEmail, setRecipientEmail] = useState('')
   const [sendStatus, setSendStatus] = useState('')
   const [showSuccess, setShowSuccess] = useState(false)
+  const { token } = useAuth()
 
   useEffect(() => {
-    if (!id) {
-      setLoadError('Invalid document ID.');
+    if (!id || !token) {
+      setLoadError('Invalid document ID or not authenticated.');
       return;
     }
-    fetch(`${import.meta.env.VITE_API_URL}/api/docs/${id}`, { credentials: 'include' })
+    fetch(`${import.meta.env.VITE_API_URL}/api/docs/${id}`, {
+      headers: { Authorization: `Bearer ${token}` }
+    })
       .then(res => {
         if (!res.ok) throw new Error('Failed to fetch document')
         return res.json()
       })
       .then(setDoc)
       .catch(() => setLoadError('Failed to fetch document.'))
-    fetch(`${import.meta.env.VITE_API_URL}/api/signatures/${id}`, { credentials: 'include' })
+    fetch(`${import.meta.env.VITE_API_URL}/api/signatures/${id}`, {
+      headers: { Authorization: `Bearer ${token}` }
+    })
       .then(res => {
         if (res.status === 404) return [];
         if (!res.ok) throw new Error('Failed to fetch signatures');
@@ -52,7 +58,7 @@ function DocumentViewPage() {
       })
       .then(setSignatures)
       .catch(() => setLoadError('Failed to fetch signatures.'))
-  }, [id])
+  }, [id, token])
 
   console.log('Document object:', doc);
 
@@ -87,8 +93,11 @@ function DocumentViewPage() {
   }
 
   const handleSaveSignatures = async () => {
+    if (!token) return;
     // Download signed PDF with signatures using pdf-lib
-    const pdfBytes = await fetch(`${import.meta.env.VITE_API_URL}${doc.url}`, { credentials: 'include' }).then(res => res.arrayBuffer())
+    const pdfBytes = await fetch(`${import.meta.env.VITE_API_URL}${doc.url}`, {
+      headers: { Authorization: `Bearer ${token}` }
+    }).then(res => res.arrayBuffer())
     const pdfDoc = await PDFDocument.load(pdfBytes)
     const font = await pdfDoc.embedFont(StandardFonts.HelveticaBold)
     const pages = pdfDoc.getPages()
@@ -126,10 +135,13 @@ function DocumentViewPage() {
   const handleSendForSignature = async () => {
     setSendStatus('')
     try {
+      if (!token) throw new Error('Not authenticated')
       const res = await fetch(`${import.meta.env.VITE_API_URL}/api/signature-request`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
+        },
         body: JSON.stringify({ documentId: doc._id, recipientEmail }),
       })
       if (!res.ok) throw new Error('Failed to send signature request')

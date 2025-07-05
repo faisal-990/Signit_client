@@ -3,16 +3,12 @@ import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../utils/AuthContext';
 
 function AuthPage({ mode }) {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, handleGoogleLogin } = useAuth();
   const navigate = useNavigate();
 
   React.useEffect(() => {
     if (isAuthenticated) navigate('/');
   }, [isAuthenticated, navigate]);
-
-  const handleGoogleLogin = () => {
-    window.location.href = `${import.meta.env.VITE_API_URL}/api/auth/google`;
-  };
 
   const isLogin = mode === 'login';
 

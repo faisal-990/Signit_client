@@ -2,9 +2,10 @@ import React, { useEffect, useState, useRef } from 'react'
 import { useParams } from 'react-router-dom'
 import PDFViewer from '../components/PDFViewer'
 import SignatureField from '../components/SignatureField'
+import { useAuth } from '../utils/AuthContext'
 
 function PublicSignPage() {
-  const { token } = useParams()
+  const { token: urlToken } = useParams()
   const [request, setRequest] = useState(null)
   const [signatures, setSignatures] = useState([])
   const [pdfError, setPdfError] = useState(false)
@@ -12,16 +13,20 @@ function PublicSignPage() {
   const [signed, setSigned] = useState(false)
   const pdfContainerRef = useRef(null)
   const [renderedPdfSize, setRenderedPdfSize] = useState({ width: 600, height: 800 })
+  const { token } = useAuth()
 
   useEffect(() => {
-    fetch(`${import.meta.env.VITE_API_URL}/api/signature-request/${token}`, { credentials: 'include' })
+    if (!token) return;
+    fetch(`${import.meta.env.VITE_API_URL}/api/signature-request/${urlToken}`, {
+      headers: { Authorization: `Bearer ${token}` }
+    })
       .then(res => res.json())
       .then(data => {
         if (data.error) setLoadError(data.error)
         else setRequest(data)
       })
       .catch(() => setLoadError('Failed to load signature request.'))
-  }, [token])
+  }, [urlToken, token])
 
   const handleAddSignature = page => {
     setSignatures([{ x: 100, y: 100, page, name: 'Sign Here' }])
@@ -32,8 +37,11 @@ function PublicSignPage() {
   }
 
   const handleSaveSignature = async () => {
+    if (!token) return;
     // Convert to PDF coordinates
-    const pdfBytes = await fetch(`${import.meta.env.VITE_API_URL}${request.document.url}`, { credentials: 'include' }).then(res => res.arrayBuffer())
+    const pdfBytes = await fetch(`${import.meta.env.VITE_API_URL}${request.document.url}`, {
+      headers: { Authorization: `Bearer ${token}` }
+    }).then(res => res.arrayBuffer())
     const { width: renderedWidth, height: renderedHeight } = renderedPdfSize
     const pdfDoc = await window.pdfLib.PDFDocument.load(pdfBytes)
     const font = await pdfDoc.embedFont(window.pdfLib.StandardFonts.HelveticaBold)
@@ -56,10 +64,12 @@ function PublicSignPage() {
     })
     const signedPdfBytes = await pdfDoc.save()
     // Submit to backend
-    await fetch(`${import.meta.env.VITE_API_URL}/api/signature-request/${token}/sign`, {
+    await fetch(`${import.meta.env.VITE_API_URL}/api/signature-request/${urlToken}/sign`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      credentials: 'include',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`
+      },
       body: JSON.stringify({ signatureData: { signatures } }),
     })
     setSigned(true)

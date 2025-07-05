@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import DocumentCard from '../components/DocumentCard'
 import UploadPDF from '../components/UploadPDF'
+import { useAuth } from '../utils/AuthContext'
 
 const statusOptions = ['all', 'pending', 'signed', 'rejected']
 
@@ -10,12 +11,16 @@ function DashboardPage() {
   const [filter, setFilter] = useState('all')
   const [uploading, setUploading] = useState(false)
   const navigate = useNavigate()
+  const { token } = useAuth()
 
   useEffect(() => {
-    fetch(`${import.meta.env.VITE_API_URL}/api/docs`, { credentials: 'include' })
+    if (!token) return;
+    fetch(`${import.meta.env.VITE_API_URL}/api/docs`, {
+      headers: { Authorization: `Bearer ${token}` }
+    })
       .then(res => res.json())
       .then(setDocs)
-  }, [])
+  }, [token])
 
   const handleUpload = async (docData) => {
     setUploading(true)

@@ -1,10 +1,12 @@
 import React, { useRef, useState } from 'react'
+import { useAuth } from '../utils/AuthContext'
 
 function UploadPDF({ onUpload }) {
   const fileInput = useRef()
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [dragActive, setDragActive] = useState(false)
+  const { token } = useAuth()
 
   const handleFileChange = async e => {
     const file = e.target.files[0]
@@ -18,14 +20,17 @@ function UploadPDF({ onUpload }) {
         const uploadRes = await fetch(`${import.meta.env.VITE_API_URL}/api/upload/pdf`, {
           method: 'POST',
           body: formData,
+          headers: token ? { Authorization: `Bearer ${token}` } : {}
         })
         if (!uploadRes.ok) throw new Error('Upload failed')
         const uploadData = await uploadRes.json()
         // 2. Save document metadata to backend
         const docRes = await fetch(`${import.meta.env.VITE_API_URL}/api/docs/upload`, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          credentials: 'include',
+          headers: {
+            'Content-Type': 'application/json',
+            ...(token ? { Authorization: `Bearer ${token}` } : {})
+          },
           body: JSON.stringify({ name: file.name, url: uploadData.url }),
         })
         if (!docRes.ok) throw new Error('Failed to save document metadata')
