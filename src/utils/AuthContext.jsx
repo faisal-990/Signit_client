@@ -1,13 +1,15 @@
-// utils/AuthContext.js
 import React, { createContext, useContext, useState, useEffect } from "react";
+import axios from "axios"; // Make sure this is imported
 
 const AuthContext = createContext();
 
-// Set the default for axios (or use fetch with credentials)
-// This is the most important part
-import axios from "axios";
+// --- THIS IS THE FIX ---
+// Set the default axios settings
+// This tells axios to use your Render URL as the base
 axios.defaults.baseURL = import.meta.env.VITE_API_URL;
-axios.defaults.withCredentials = true; // This sends the cookie with every request
+// This tells axios to SEND THE COOKIE on every request
+axios.defaults.withCredentials = true;
+// ----------------------
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
@@ -17,7 +19,7 @@ export function AuthProvider({ children }) {
   const refreshUser = async () => {
     setLoading(true);
     try {
-      // The withCredentials=true setting makes this request work
+      // This request will now automatically include the cookie
       const res = await axios.get("/api/auth/me");
 
       if (res.data.user) {
@@ -48,8 +50,7 @@ export function AuthProvider({ children }) {
   };
 
   const handleGoogleLogin = () => {
-    // Just redirect to the backend. The backend will handle the rest
-    // and redirect back to the CLIENT_URL (which reloads this app)
+    // Redirect to the backend for Google login
     window.location.href = `${import.meta.env.VITE_API_URL}/api/auth/google`;
   };
 
@@ -64,6 +65,7 @@ export function AuthProvider({ children }) {
         handleGoogleLogin,
       }}
     >
+      {/* Only render children when loading is false */}
       {!loading && children}
     </AuthContext.Provider>
   );
@@ -72,4 +74,3 @@ export function AuthProvider({ children }) {
 export function useAuth() {
   return useContext(AuthContext);
 }
-
