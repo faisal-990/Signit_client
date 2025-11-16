@@ -1,83 +1,75 @@
-import React, { createContext, useContext, useState, useEffect } from 'react'
+// utils/AuthContext.js
+import React, { createContext, useContext, useState, useEffect } from "react";
 
-const AuthContext = createContext()
+const AuthContext = createContext();
+
+// Set the default for axios (or use fetch with credentials)
+// This is the most important part
+import axios from "axios";
+axios.defaults.baseURL = import.meta.env.VITE_API_URL;
+axios.defaults.withCredentials = true; // This sends the cookie with every request
 
 export function AuthProvider({ children }) {
-  const [user, setUser] = useState(null)
-  const [isAuthenticated, setIsAuthenticated] = useState(false)
-  const [loading, setLoading] = useState(true)
-  const [token, setToken] = useState(() => localStorage.getItem('jwt_token') || null)
+  const [user, setUser] = useState(null);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [loading, setLoading] = useState(true);
 
-  // Helper to set token in state and localStorage
-  const saveToken = (jwt) => {
-    setToken(jwt)
-    if (jwt) localStorage.setItem('jwt_token', jwt)
-    else localStorage.removeItem('jwt_token')
-  }
-
-  // Check for token in URL (after Google login)
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search)
-    const jwt = params.get('token')
-    if (jwt) {
-      saveToken(jwt)
-      window.history.replaceState({}, document.title, window.location.pathname) // Clean up URL
-    }
-  }, [])
-
-  // Fetch user info with JWT
   const refreshUser = async () => {
-    setLoading(true)
+    setLoading(true);
     try {
-      if (!token) throw new Error('No token')
-      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/auth/me`, {
-        headers: { Authorization: `Bearer ${token}` }
-      })
-      if (res.ok) {
-        const data = await res.json()
-        setUser(data.user)
-        setIsAuthenticated(true)
+      // The withCredentials=true setting makes this request work
+      const res = await axios.get("/api/auth/me");
+
+      if (res.data.user) {
+        setUser(res.data.user);
+        setIsAuthenticated(true);
       } else {
-        setUser(null)
-        setIsAuthenticated(false)
-        saveToken(null)
+        setUser(null);
+        setIsAuthenticated(false);
       }
-    } catch {
-      setUser(null)
-      setIsAuthenticated(false)
-      saveToken(null)
+    } catch (err) {
+      setUser(null);
+      setIsAuthenticated(false);
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
+  // On initial load, check if we're already logged in (via the cookie)
   useEffect(() => {
-    if (token) refreshUser()
-    else {
-      setUser(null)
-      setIsAuthenticated(false)
-      setLoading(false)
-    }
-    // eslint-disable-next-line
-  }, [token])
+    refreshUser();
+  }, []);
 
-  const logout = () => {
-    saveToken(null)
-    setUser(null)
-    setIsAuthenticated(false)
-  }
+  const logout = async () => {
+    // Tell the backend to destroy the session/cookie
+    await axios.get("/api/auth/logout");
+    setUser(null);
+    setIsAuthenticated(false);
+  };
 
   const handleGoogleLogin = () => {
-    window.location.href = `${import.meta.env.VITE_API_URL}/api/auth/google`
-  }
+    // Just redirect to the backend. The backend will handle the rest
+    // and redirect back to the CLIENT_URL (which reloads this app)
+    window.location.href = `${import.meta.env.VITE_API_URL}/api/auth/google`;
+  };
 
   return (
-    <AuthContext.Provider value={{ user, isAuthenticated, loading, refreshUser, logout, handleGoogleLogin, token }}>
-      {children}
+    <AuthContext.Provider
+      value={{
+        user,
+        isAuthenticated,
+        loading,
+        refreshUser,
+        logout,
+        handleGoogleLogin,
+      }}
+    >
+      {!loading && children}
     </AuthContext.Provider>
-  )
+  );
 }
 
 export function useAuth() {
-  return useContext(AuthContext)
-} 
+  return useContext(AuthContext);
+}
+
