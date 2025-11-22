@@ -1,37 +1,45 @@
-import React, { createContext, useContext, useState } from "react";
+import React, { createContext, useContext, useState, useEffect } from "react";
+import axios from "axios"; // 1. Import Axios
 
 const AuthContext = createContext();
 
+// 2. RESTORE THE GLOBAL AXIOS CONFIGURATION
+// This ensures all components (like DocumentView) hit the Render Backend, not the Frontend.
+axios.defaults.baseURL = import.meta.env.VITE_API_URL;
+axios.defaults.withCredentials = true;
+
 export function AuthProvider({ children }) {
-  // 1. Initialize with a fake user immediately
+  // Initialize with the Bypass User immediately
   const [user, setUser] = useState({
-    _id: "demo-user-123",
+    _id: "65e1234567890abcdef12345", // Matches the ID in backend index.js
     displayName: "Demo User",
     email: "demo@example.com",
     photo: "https://ui-avatars.com/api/?name=Demo+User&background=random",
   });
 
-  // 2. Set authenticated to true by default
   const [isAuthenticated, setIsAuthenticated] = useState(true);
   const [loading, setLoading] = useState(false);
 
-  // 3. Disable the server check (we are bypassing auth)
+  // We need a dummy token for components that might check for it
+  const token = "demo-bypass-token";
+
   const refreshUser = async () => {
-    // No-op
+    console.log("Refreshed user (Bypass Mode)");
   };
 
   const logout = async () => {
-    alert("Logout disabled in Demo Mode");
+    alert("You cannot logout in Demo/Bypass mode.");
   };
 
   const handleGoogleLogin = () => {
-    alert("Login not required in Demo Mode");
+    alert("You are already logged in (Demo Mode).");
   };
 
   return (
     <AuthContext.Provider
       value={{
         user,
+        token, // Export the dummy token so components don't crash
         isAuthenticated,
         loading,
         refreshUser,
