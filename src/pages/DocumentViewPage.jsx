@@ -28,10 +28,6 @@ function DocumentViewPage() {
   const [pendingPage, setPendingPage] = useState(1);
   const [pendingName, setPendingName] = useState("");
   const [pendingFont, setPendingFont] = useState(signatureFonts[0]);
-  const [renderedPdfSize, setRenderedPdfSize] = useState({
-    width: 600,
-    height: 800,
-  });
   const [showSendModal, setShowSendModal] = useState(false);
   const [recipientEmail, setRecipientEmail] = useState("");
   const [sendStatus, setSendStatus] = useState("");
@@ -71,6 +67,7 @@ function DocumentViewPage() {
   const handleAddSignature = (page) => {
     setPendingPage(page);
     setPendingName("");
+    setPendingFont(signatureFonts[0]); // Reset font
     setShowSignatureModal(true);
   };
 
@@ -186,7 +183,7 @@ function DocumentViewPage() {
             </button>
           </div>
 
-          {/* --- TOOLBAR (RESTORED) --- */}
+          {/* --- TOOLBAR --- */}
           <div className="bg-white p-4 rounded-xl shadow flex flex-col md:flex-row items-center gap-4 border border-blue-100">
             <button
               className="bg-yellow-400 text-yellow-900 px-4 py-2 rounded font-bold shadow hover:bg-yellow-500"
@@ -231,6 +228,7 @@ function DocumentViewPage() {
                           name={sig.name}
                           style={sig.style}
                           fontFamily={sig.fontFamily}
+                          fontWeight={sig.fontWeight}
                           onDrop={(item, pos) => handleDrop(sig, pos)}
                         >
                           {sig.name}
@@ -243,29 +241,48 @@ function DocumentViewPage() {
           </div>
         </div>
 
-        {/* Modals */}
+        {/* --- RESTORED SIGNATURE MODAL --- */}
         {showSignatureModal && (
           <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50">
             <div className="bg-white p-6 rounded-lg shadow-xl w-80">
-              <h3 className="font-bold mb-2">Your Name</h3>
+              <h3 className="font-bold mb-2">Create Signature</h3>
               <input
-                className="border w-full p-2 mb-4"
+                className="border w-full p-2 mb-4 rounded"
                 autoFocus
+                placeholder="Type your name"
                 value={pendingName}
                 onChange={(e) => setPendingName(e.target.value)}
               />
+
+              {/* --- FONT OPTIONS RESTORED HERE --- */}
+              <div className="flex flex-col gap-2 mb-4 max-h-40 overflow-y-auto">
+                {signatureFonts.map((font) => (
+                  <button
+                    key={font.label}
+                    className={`border rounded px-2 py-2 text-left hover:bg-blue-50 ${pendingFont.label === font.label ? "bg-blue-100 border-blue-500 ring-1 ring-blue-500" : "border-gray-200"}`}
+                    style={{
+                      fontFamily: font.fontFamily,
+                      fontWeight: font.fontWeight || "normal",
+                    }}
+                    onClick={() => setPendingFont(font)}
+                  >
+                    {pendingName || "Sign Here"}
+                  </button>
+                ))}
+              </div>
+
               <div className="flex justify-end gap-2">
                 <button
                   onClick={() => setShowSignatureModal(false)}
-                  className="text-gray-500"
+                  className="text-gray-500 hover:text-gray-700"
                 >
                   Cancel
                 </button>
                 <button
                   onClick={handleSignatureStyle}
-                  className="bg-blue-500 text-white px-4 py-2 rounded"
+                  className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded"
                 >
-                  Add
+                  Add Signature
                 </button>
               </div>
             </div>
