@@ -1,57 +1,31 @@
-import React, { createContext, useContext, useState, useEffect } from "react";
-import axios from "axios"; // Make sure this is imported
+import React, { createContext, useContext, useState } from "react";
 
 const AuthContext = createContext();
 
-// --- THIS IS THE FIX ---
-// Set the default axios settings
-// This tells axios to use your Render URL as the base
-axios.defaults.baseURL = import.meta.env.VITE_API_URL;
-// This tells axios to SEND THE COOKIE on every request
-axios.defaults.withCredentials = true;
-// ----------------------
-
 export function AuthProvider({ children }) {
-  const [user, setUser] = useState(null);
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [loading, setLoading] = useState(true);
+  // 1. Initialize with a fake user immediately
+  const [user, setUser] = useState({
+    _id: "demo-user-123",
+    displayName: "Demo User",
+    email: "demo@example.com",
+    photo: "https://ui-avatars.com/api/?name=Demo+User&background=random",
+  });
 
+  // 2. Set authenticated to true by default
+  const [isAuthenticated, setIsAuthenticated] = useState(true);
+  const [loading, setLoading] = useState(false);
+
+  // 3. Disable the server check (we are bypassing auth)
   const refreshUser = async () => {
-    setLoading(true);
-    try {
-      // This request will now automatically include the cookie
-      const res = await axios.get("/api/auth/me");
-
-      if (res.data.user) {
-        setUser(res.data.user);
-        setIsAuthenticated(true);
-      } else {
-        setUser(null);
-        setIsAuthenticated(false);
-      }
-    } catch (err) {
-      setUser(null);
-      setIsAuthenticated(false);
-    } finally {
-      setLoading(false);
-    }
+    // No-op
   };
 
-  // On initial load, check if we're already logged in (via the cookie)
-  useEffect(() => {
-    refreshUser();
-  }, []);
-
   const logout = async () => {
-    // Tell the backend to destroy the session/cookie
-    await axios.get("/api/auth/logout");
-    setUser(null);
-    setIsAuthenticated(false);
+    alert("Logout disabled in Demo Mode");
   };
 
   const handleGoogleLogin = () => {
-    // Redirect to the backend for Google login
-    window.location.href = `${import.meta.env.VITE_API_URL}/api/auth/google`;
+    alert("Login not required in Demo Mode");
   };
 
   return (
@@ -65,8 +39,7 @@ export function AuthProvider({ children }) {
         handleGoogleLogin,
       }}
     >
-      {/* Only render children when loading is false */}
-      {!loading && children}
+      {children}
     </AuthContext.Provider>
   );
 }
